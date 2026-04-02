@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual ROG · Empty Space Detector v4</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Arial, 'Noto Sans', sans-serif;
+      background: #f0f0ee;
+      padding: 24px;
+      color: #1a1a1a;
+      font-size: 13px;
+    }
+    h1 { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .subtitle { font-size: 11px; color: #999; margin-bottom: 14px; }
+
+    .info-banner {
+      background: #f5f5f0;
+      border: 0.5px solid #e0e0d8;
+      border-left: 3px solid #1a1a1a;
+      border-radius: 6px;
+      padding: 9px 14px;
+      font-size: 11px; color: #555;
+      margin-bottom: 16px; line-height: 1.7;
+    }
+    .info-banner strong { color: #1a1a1a; }
+
+    .panel {
+      background: white;
+      border: 0.5px solid #ddd;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 14px;
+    }
+    .panel-title {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: #999; margin-bottom: 12px;
+    }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+    .cg { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #555; }
+    .cg-row { display: flex; align-items: center; gap: 7px; }
+    .cg-hint { font-size: 10px; color: #bbb; margin-top: 1px; }
+    input[type="range"] { width: 120px; cursor: pointer; }
+    input[type="number"] { width: 58px; padding: 3px 6px; border: 0.5px solid #ccc; border-radius: 5px; font-size: 12px; }
+
+    button {
+      padding: 5px 12px; font-size: 12px;
+      border: 0.5px solid #ccc; border-radius: 6px;
+      background: white; cursor: pointer; transition: background 0.1s;
+    }
+    button:hover { background: #f5f5f5; }
+    button.btn-primary {
+      background: #1a1a1a; color: white; border-color: #1a1a1a;
+      padding: 8px 22px; font-size: 13px;
+    }
+    button.btn-primary:hover { background: #333; }
+    button.btn-sm { padding: 3px 8px; font-size: 11px; }
+    button.btn-danger { color: #c0392b; border-color: #e0b0aa; }
+    button.btn-danger:hover { background: #fff5f5; }
+
+    .json-input {
+      width: 100%; height: 180px;
+      font-family: 'Courier New', monospace; font-size: 11px;
+      border: 0.5px solid #ddd; border-radius: 7px;
+      padding: 10px 12px; resize: vertical;
+      color: #333; background: #fafafa; line-height: 1.5;
+    }
+    .json-input:focus { outline: none; border-color: #aaa; background: white; }
+    .input-helper { font-size: 10px; color: #bbb; margin-top: 5px; }
+
+    .drop-zone {
+      border: 1.5px dashed #ccc; border-radius: 8px;
+      padding: 14px 12px; text-align: center;
+      font-size: 12px; color: #999; cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .drop-zone:hover, .drop-zone.drag-over { border-color: #888; color: #555; }
+    .drop-zone small { display: block; font-size: 10px; color: #bbb; margin-top: 3px; }
+
+    .img-library { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .img-card {
+      width: 80px;
+      border: 1.5px solid #e0e0e0; border-radius: 7px;
+      overflow: hidden; background: white;
+      position: relative;
+    }
+    .img-card .thumb {
+      width: 100%; height: 64px;
+      display: flex; align-items: center; justify-content: center;
+      background: #f9f9f9; overflow: hidden;
+    }
+    .img-card .thumb img { width: 100%; height: 100%; object-fit: contain; }
+    .img-card .img-label {
+      font-size: 9px; color: #888; padding: 3px 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      text-align: center; background: white;
+    }
+    .img-card .img-width-badge {
+      font-size: 8px; color: #aaa; padding: 0 4px 3px;
+      text-align: center; background: white;
+    }
+    .img-card .img-idx {
+      position: absolute; top: 3px; left: 4px;
+      font-size: 8px; font-weight: 600; color: #fff;
+      background: rgba(0,0,0,0.4); padding: 1px 4px; border-radius: 3px;
+    }
+    .img-card .remove-img {
+      position: absolute; top: 2px; right: 3px;
+      width: 14px; height: 14px;
+      background: rgba(0,0,0,0.4); border: none; border-radius: 50%;
+      color: white; font-size: 9px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+
+    .assign-section { margin-top: 14px; }
+    .assign-title {
+      font-size: 10px; color: #aaa; margin-bottom: 8px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    /* ★ Width match info banner */
+    .assign-info {
+      font-size: 10px; color: #888;
+      background: #f9f9f7; border: 0.5px solid #e8e8e4;
+      border-radius: 5px; padding: 6px 10px;
+      margin-bottom: 10px; line-height: 1.6;
+    }
+    .assign-info strong { color: #555; }
+    .assign-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+    }
+    .assign-row { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+    .cluster-badge {
+      background: #1a1a1a; color: white;
+      font-size: 9px; font-weight: 700;
+      padding: 2px 6px; border-radius: 10px;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .assign-arrow { color: #ccc; font-size: 10px; flex-shrink: 0; }
+    .assign-select {
+      flex: 1; font-size: 10px; padding: 2px 4px;
+      border: 0.5px solid #ddd; border-radius: 4px;
+      background: white; cursor: pointer;
+      min-width: 0;
+    }
+    .assign-actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+    .assign-actions-hint { font-size: 10px; color: #bbb; }
+
+    .stats-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .stat-pill {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: #666;
+      background: white; border: 0.5px solid #e5e5e5;
+      padding: 3px 10px; border-radius: 20px;
+    }
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .realogram-outer {
+      background: #e8e8e6; border: 0.5px solid #d0d0ce;
+      border-radius: 12px; padding: 16px 12px;
+      margin-bottom: 14px;
+    }
+    .realogram-container { display: flex; flex-direction: column; gap: 8px; }
+
+    .shelf-row-wrapper { display: flex; align-items: center; gap: 8px; }
+    .row-label {
+      width: 48px; font-size: 10px; color: #aaa;
+      text-align: right; flex-shrink: 0; line-height: 1.5;
+    }
+    .row-threshold { font-size: 8px; color: #ccc; display: block; margin-top: 1px; }
+
+    .shelf-row {
+      flex: 1; display: flex;
+      background: white;
+      border: 1.5px solid #d0d0ce;
+      border-radius: 8px; overflow: hidden;
+      padding: 4px; gap: 3px;
+    }
+
+    .r-cell {
+      flex-shrink: 0; position: relative; overflow: hidden;
+      border-radius: 5px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .r-cell .cell-id {
+      font-weight: 700; color: rgba(0,0,0,0.55);
+      pointer-events: none; text-align: center; line-height: 1.2;
+    }
+    .r-cell .cell-wpx {
+      position: absolute; bottom: 3px; right: 4px;
+      font-size: 8px; color: rgba(0,0,0,0.3); pointer-events: none;
+    }
+
+    .r-cell.has-img { background: white !important; }
+    .r-cell.has-img img {
+      width: 100%; height: 100%; object-fit: contain;
+      display: block; position: absolute; inset: 0;
+    }
+    .r-cell.has-img .cell-id-overlay {
+      position: absolute; bottom: 3px; left: 4px;
+      background: rgba(0,0,0,0.45); color: white;
+      font-size: 9px; font-weight: 700;
+      padding: 1px 5px; border-radius: 3px;
+      pointer-events: none; z-index: 2;
+    }
+    .r-cell.has-img .cell-wpx { color: rgba(255,255,255,0.5); z-index: 2; }
+
+    .r-cell-empty {
+      flex-shrink: 0; position: relative; overflow: hidden;
+      border-radius: 5px; background: #f2f0ec;
+      border: 1.5px dashed #c8c5bf;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 3px;
+    }
+    .empty-icon { width: 18px; height: 18px; border: 1.5px dashed #bbb; border-radius: 3px; }
+    .empty-label { font-size: 8px; font-weight: 700; color: #bbb; letter-spacing: 0.07em; text-transform: uppercase; }
+    .empty-wpx { position: absolute; bottom: 3px; right: 4px; font-size: 8px; color: #ccc; }
+
+    .legend {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      font-size: 11px; color: #888;
+      padding: 10px 14px; background: white;
+      border: 0.5px solid #e5e5e5; border-radius: 8px; margin-bottom: 6px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-box-product { width: 14px; height: 14px; border-radius: 3px; background: #b5d4f4; border: 1px solid rgba(0,0,0,0.08); }
+    .legend-box-empty { width: 14px; height: 14px; border-radius: 3px; background: #f2f0ec; border: 1.5px dashed #c8c5bf; }
+
+    .error-msg {
+      background: #fff5f5; border: 0.5px solid #f5c0bb;
+      border-radius: 7px; padding: 10px 14px;
+      font-size: 12px; color: #c0392b; margin-bottom: 12px; display: none;
+    }
+    .render-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<h1>Virtual ROG · Empty Space Detector v4</h1>
+<p class="subtitle">cluster_bbox 좌표 기반 · 선반 층별 빈 공간 자동 감지 · 이미지 width 매핑 지원</p>
+
+<div class="info-banner">
+  <strong>목적:</strong> ROG에서 추출된 <strong>cluster_bbox [x1, y1, x2, y2]</strong> 좌표만으로
+  선반의 각 <strong>층(Row)을 자동 구분</strong>하고, 빈 공간 감지 기준을
+  <strong>해당 층 상품 평균 width × 배율</strong>로 자동 계산합니다.
+  상품 이미지를 업로드하면 <strong>bbox width ↔ 이미지 naturalWidth 크기 순서로 자동 매핑</strong>됩니다.
+</div>
+
+<!-- Controls -->
+<div class="panel">
+  <div class="panel-title">Display Settings</div>
+  <div class="controls">
+    <div class="cg">
+      <div class="cg-row">
+        <label>Gap sensitivity</label>
+        <input type="range" id="multiplier" min="0.3" max="1.0" value="0.5" step="0.05"
+               oninput="document.getElementById('multiplierVal').textContent='×'+parseFloat(this.value).toFixed(2); render()">
+        <span id="multiplierVal">×0.50</span>
+      </div>
+      <div class="cg-hint">빈 공간 감지 기준 = 해당 층 상품 평균 width × 배율</div>
+    </div>
+    <div class="cg">
+      <div class="cg-row">
+        <label>Row height</label>
+        <input type="range" id="rowHeight" min="60" max="200" value="120"
+               oninput="document.getElementById('rowHeightVal').textContent=this.value+'px'; render()">
+        <span id="rowHeightVal">120px</span>
+      </div>
+    </div>
+    <div class="cg">
+      <div class="cg-row">
+        <label>Max width</label>
+        <input type="number" id="maxWidth" value="960" min="400" max="1600" step="10" oninput="render()">
+        <span>px</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 1. JSON Input -->
+<div class="panel">
+  <div class="panel-title">1 · cluster_bbox JSON Input</div>
+  <textarea class="json-input" id="jsonInput" spellcheck="false" oninput="refreshAssignmentUI()"></textarea>
+  <div class="input-helper">Array of objects with <code>cluster_bbox: [x1, y1, x2, y2]</code> and <code>cluster_id</code></div>
+</div>
+
+<!-- 2. Image Library -->
+<div class="panel">
+  <div class="panel-title">2 · Image Library <span style="font-weight:400;color:#bbb;text-transform:none;letter-spacing:0">(optional)</span></div>
+
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    Drag &amp; drop or click to upload product images
+    <small>Multiple files supported · bbox width 크기 순서로 자동 매핑</small>
+  </div>
+  <input type="file" id="fileInput" multiple accept="image/*" style="display:none" onchange="handleFiles(this.files)">
+
+  <div class="img-library" id="imgLibrary"></div>
+  <div id="libraryActions" style="display:none; margin-top:10px; gap:8px;">
+    <button class="btn-sm btn-danger" onclick="clearLibrary()">Clear all images</button>
+  </div>
+
+  <!-- Assignment section -->
+  <div class="assign-section" id="assignSection" style="display:none">
+    <div class="assign-title">Assign images to cluster IDs</div>
+    <div class="assign-info">
+      <strong>⚡ Width match 방식:</strong>
+      bbox가 <strong>좁은 셀 → naturalWidth가 작은 이미지</strong>,
+      bbox가 <strong>넓은 셀 → naturalWidth가 큰 이미지</strong> 순서로 자동 매핑됩니다.
+      이미지 수보다 상품이 많으면 순환 적용됩니다.
+    </div>
+    <div class="assign-grid" id="assignGrid"></div>
+    <div class="assign-actions">
+      <button class="btn-sm" onclick="autoAssign()"
+              title="bbox width 기준으로 이미지 크기 순서 매핑">
+        ⚡ Auto-assign (width match)
+      </button>
+      <button class="btn-sm btn-danger" onclick="clearAssignments()">Clear all</button>
+      <span class="assign-actions-hint">수동으로 드롭다운에서 변경도 가능</span>
+    </div>
+  </div>
+</div>
+
+<!-- Render Button -->
+<div class="render-row">
+  <button class="btn-primary" onclick="render()">Render Virtual ROG ↓</button>
+</div>
+
+<div class="error-msg" id="errorMsg"></div>
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="realogram-outer">
+  <div class="realogram-container" id="realogramContainer"></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-box-product"></div> 상품 셀 (이미지 또는 컬러 블록)</div>
+  <div class="legend-item"><div class="legend-box-empty"></div> 빈 공간 (층 평균 width × 배율 초과 gap)</div>
+</div>
+
+<script>
+/* ═══════════════════════════════════
+   State
+═══════════════════════════════════ */
+let images      = [];   // { url, name, naturalWidth }
+let assignments = {};   // { cluster_id: imgIdx | null }
+
+const PALETTE = [
+  '#b5d4f4','#c0dd97','#f5c4b3','#fac775',
+  '#f4c0d1','#cecbf6','#aad4c8','#f5e4a0',
+  '#d3c8f4','#b8e0d2','#f9d0a0','#c8e6c9'
+];
+
+/* ═══════════════════════════════════
+   Sample JSON
+═══════════════════════════════════ */
+const SAMPLE_JSON = [
+  {"cluster_id":1,  "cluster_bbox":[30,20,220,100]},
+  {"cluster_id":2,  "cluster_bbox":[223,20,390,100]},
+  {"cluster_id":3,  "cluster_bbox":[393,20,560,100]},
+  {"cluster_id":4,  "cluster_bbox":[700,20,880,100]},
+  {"cluster_id":5,  "cluster_bbox":[883,20,970,100]},
+  {"cluster_id":6,  "cluster_bbox":[30,130,170,210]},
+  {"cluster_id":7,  "cluster_bbox":[173,130,380,210]},
+  {"cluster_id":8,  "cluster_bbox":[383,130,530,210]},
+  {"cluster_id":9,  "cluster_bbox":[700,130,860,210]},
+  {"cluster_id":10, "cluster_bbox":[863,130,970,210]},
+  {"cluster_id":11, "cluster_bbox":[30,240,260,320]},
+  {"cluster_id":12, "cluster_bbox":[263,240,430,320]},
+  {"cluster_id":13, "cluster_bbox":[560,240,720,320]},
+  {"cluster_id":14, "cluster_bbox":[723,240,870,320]},
+  {"cluster_id":15, "cluster_bbox":[873,240,970,320]},
+  {"cluster_id":16, "cluster_bbox":[30,350,200,430]},
+  {"cluster_id":17, "cluster_bbox":[203,350,390,430]},
+  {"cluster_id":18, "cluster_bbox":[393,350,560,430]},
+  {"cluster_id":19, "cluster_bbox":[700,350,850,430]},
+  {"cluster_id":20, "cluster_bbox":[853,350,970,430]},
+  {"cluster_id":21, "cluster_bbox":[30,460,230,540]},
+  {"cluster_id":22, "cluster_bbox":[233,460,420,540]},
+  {"cluster_id":23, "cluster_bbox":[423,460,580,540]},
+  {"cluster_id":24, "cluster_bbox":[700,460,840,540]},
+  {"cluster_id":25, "cluster_bbox":[843,460,970,540]},
+  {"cluster_id":26, "cluster_bbox":[30,570,180,650]},
+  {"cluster_id":27, "cluster_bbox":[183,570,350,650]},
+  {"cluster_id":28, "cluster_bbox":[353,570,530,650]},
+  {"cluster_id":29, "cluster_bbox":[533,570,680,650]},
+  {"cluster_id":30, "cluster_bbox":[820,570,970,650]},
+  {"cluster_id":31, "cluster_bbox":[30,680,210,760]},
+  {"cluster_id":32, "cluster_bbox":[213,680,360,760]},
+  {"cluster_id":33, "cluster_bbox":[500,680,650,760]},
+  {"cluster_id":34, "cluster_bbox":[653,680,800,760]},
+  {"cluster_id":35, "cluster_bbox":[803,680,970,760]},
+  {"cluster_id":36, "cluster_bbox":[30,790,200,870]},
+  {"cluster_id":37, "cluster_bbox":[203,790,380,870]},
+  {"cluster_id":38, "cluster_bbox":[383,790,540,870]},
+  {"cluster_id":39, "cluster_bbox":[700,790,840,870]},
+  {"cluster_id":40, "cluster_bbox":[843,790,970,870]},
+  {"cluster_id":41, "cluster_bbox":[30,900,160,980]},
+  {"cluster_id":42, "cluster_bbox":[163,900,300,980]},
+  {"cluster_id":43, "cluster_bbox":[303,900,460,980]},
+  {"cluster_id":44, "cluster_bbox":[463,900,610,980]},
+  {"cluster_id":45, "cluster_bbox":[750,900,880,980]},
+  {"cluster_id":46, "cluster_bbox":[883,900,970,980]}
+];
+
+document.getElementById('jsonInput').value = JSON.stringify(SAMPLE_JSON, null, 2);
+
+/* ═══════════════════════════════════
+   Image Library
+═══════════════════════════════════ */
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+
+function handleFiles(files) {
+  Array.from(files).forEach(f => {
+    if (!f.type.startsWith('image/')) return;
+    const r = new FileReader();
+    r.onload = e => {
+      const url = e.target.result;
+      const tmp = new Image();
+      tmp.onload = () => {
+        images.push({ url, name: f.name, naturalWidth: tmp.naturalWidth });
+        refreshLibrary();
+        refreshAssignmentUI();
+      };
+      tmp.src = url;
+    };
+    r.readAsDataURL(f);
+  });
+}
+
+function refreshLibrary() {
+  const lib = document.getElementById('imgLibrary');
+  lib.innerHTML = '';
+  images.forEach((img, i) => {
+    const card = document.createElement('div');
+    card.className = 'img-card';
+    card.innerHTML = `
+      <span class="img-idx">${i+1}</span>
+      <div class="thumb"><img src="${img.url}" alt=""></div>
+      <div class="img-label">${img.name}</div>
+      <div class="img-width-badge">W: ${img.naturalWidth}px</div>
+      <button class="remove-img" onclick="removeImage(${i})">✕</button>
+    `;
+    lib.appendChild(card);
+  });
+  document.getElementById('libraryActions').style.display = images.length ? 'flex' : 'none';
+}
+
+function removeImage(i) {
+  images.splice(i, 1);
+  const newAssign = {};
+  Object.keys(assignments).forEach(cid => {
+    const v = assignments[cid];
+    if (v === null)     newAssign[cid] = null;
+    else if (v === i)   newAssign[cid] = null;
+    else if (v > i)     newAssign[cid] = v - 1;
+    else                newAssign[cid] = v;
+  });
+  assignments = newAssign;
+  refreshLibrary();
+  refreshAssignmentUI();
+}
+
+function clearLibrary() {
+  images = [];
+  assignments = {};
+  document.getElementById('fileInput').value = '';
+  refreshLibrary();
+  refreshAssignmentUI();
+}
+
+/* ═══════════════════════════════════
+   Assignment UI
+═══════════════════════════════════ */
+function getCurrentClusters() {
+  try {
+    return parseInput(document.getElementById('jsonInput').value.trim());
+  } catch(e) { return []; }
+}
+
+function refreshAssignmentUI() {
+  const section = document.getElementById('assignSection');
+  const grid    = document.getElementById('assignGrid');
+  const clusters = getCurrentClusters();
+
+  if (!images.length || !clusters.length) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  grid.innerHTML = '';
+
+  clusters.forEach(c => {
+    const cid   = c.cluster_id;
+    const bboxW = c.cluster_bbox[2] - c.cluster_bbox[0];
+
+    const row = document.createElement('div');
+    row.className = 'assign-row';
+
+    const badge = document.createElement('span');
+    badge.className = 'cluster-badge';
+    badge.title = `bbox width: ${bboxW}px`;
+    badge.textContent = 'P' + cid;
+
+    const arrow = document.createElement('span');
+    arrow.className = 'assign-arrow';
+    arrow.textContent = '→';
+
+    const sel = document.createElement('select');
+    sel.className = 'assign-select';
+    sel.dataset.cid = cid;
+
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = '∅ No image';
+    sel.appendChild(none);
+
+    images.forEach((img, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${i+1}. ${img.name} (${img.naturalWidth}px)`;
+      sel.appendChild(opt);
+    });
+
+    const cur = assignments[cid];
+    sel.value = (cur !== null && cur !== undefined) ? cur : '';
+    sel.onchange = () => {
+      assignments[cid] = sel.value === '' ? null : parseInt(sel.value);
+    };
+
+    row.appendChild(badge);
+    row.appendChild(arrow);
+    row.appendChild(sel);
+    grid.appendChild(row);
+  });
+}
+
+/* ═══════════════════════════════════
+   ★ Auto-assign: width match
+   좁은 bbox → 작은 naturalWidth 이미지
+   넓은 bbox → 큰 naturalWidth 이미지
+═══════════════════════════════════ */
+function autoAssign() {
+  if (!images.length) return;
+
+  let clusters;
+  try {
+    clusters = parseInput(document.getElementById('jsonInput').value.trim());
+  } catch(e) { return; }
+  if (!clusters.length) return;
+
+  // Sort clusters by bbox width ascending
+  const clustersSorted = clusters
+    .map(c => ({ cid: c.cluster_id, bboxWidth: c.cluster_bbox[2] - c.cluster_bbox[0] }))
+    .sort((a, b) => a.bboxWidth - b.bboxWidth);
+
+  // Sort images by naturalWidth ascending → keep track of original imgIdx
+  const imagesSorted = images
+    .map((img, i) => ({ idx: i, naturalWidth: img.naturalWidth }))
+    .sort((a, b) => a.naturalWidth - b.naturalWidth);
+
+  // Match: smallest bbox → smallest image (wrap if more clusters than images)
+  clustersSorted.forEach((item, i) => {
+    assignments[item.cid] = imagesSorted[i % imagesSorted.length].idx;
+  });
+
+  refreshAssignmentUI();
+}
+
+function clearAssignments() {
+  assignments = {};
+  refreshAssignmentUI();
+}
+
+/* ═══════════════════════════════════
+   Step 1: Parse JSON
+═══════════════════════════════════ */
+function parseInput(raw) {
+  let data = JSON.parse(raw);
+  if (!Array.isArray(data)) {
+    const key = Object.keys(data).find(k => Array.isArray(data[k]));
+    if (key) data = data[key];
+    else throw new Error('JSON은 배열이거나 배열 값을 포함한 객체여야 합니다.');
+  }
+  return data.filter(d => Array.isArray(d.cluster_bbox) && d.cluster_bbox.length === 4);
+}
+
+/* ═══════════════════════════════════
+   Step 2: Group into rows (y-overlap)
+═══════════════════════════════════ */
+function groupIntoRows(clusters) {
+  const sorted = [...clusters].sort((a,b) => a.cluster_bbox[1] - b.cluster_bbox[1]);
+  const rows = [];
+  sorted.forEach(c => {
+    const [x1,y1,x2,y2] = c.cluster_bbox;
+    let matched = false;
+    for (const row of rows) {
+      const os = Math.max(row.y1_min, y1);
+      const oe = Math.min(row.y2_max, y2);
+      if (oe > os) {
+        row.items.push(c);
+        row.y1_min = Math.min(row.y1_min, y1);
+        row.y2_max = Math.max(row.y2_max, y2);
+        matched = true; break;
+      }
+    }
+    if (!matched) rows.push({ items:[c], y1_min:y1, y2_max:y2 });
+  });
+  rows.sort((a,b) => a.y1_min - b.y1_min);
+  rows.forEach(row => row.items.sort((a,b) => a.cluster_bbox[0] - b.cluster_bbox[0]));
+  return rows;
+}
+
+/* ═══════════════════════════════════
+   Step 3: Build cells (auto threshold)
+═══════════════════════════════════ */
+function buildCells(rows, multiplier, globalX1, globalX2) {
+  return rows.map(row => {
+    const items = row.items;
+    const avgW  = items.reduce((s,c) => s + (c.cluster_bbox[2]-c.cluster_bbox[0]), 0) / items.length;
+    const thr   = avgW * multiplier;
+    const cells = [];
+
+    if (items[0].cluster_bbox[0] - globalX1 >= thr)
+      cells.push({ type:'empty', width: items[0].cluster_bbox[0] - globalX1 });
+
+    items.forEach((c, i) => {
+      const [x1,,x2] = c.cluster_bbox;
+      cells.push({ type:'product', id: c.cluster_id, width: x2-x1 });
+      if (i < items.length-1) {
+        const gap = items[i+1].cluster_bbox[0] - x2;
+        if (gap >= thr) cells.push({ type:'empty', width: gap });
+      }
+    });
+
+    const lastX2 = items[items.length-1].cluster_bbox[2];
+    if (globalX2 - lastX2 >= thr)
+      cells.push({ type:'empty', width: globalX2 - lastX2 });
+
+    return { cells, thresholdPx: Math.round(thr), avgWidth: Math.round(avgW) };
+  });
+}
+
+/* ═══════════════════════════════════
+   Main Render
+═══════════════════════════════════ */
+function render() {
+  const errorEl     = document.getElementById('errorMsg');
+  const statsEl     = document.getElementById('statsBar');
+  const container   = document.getElementById('realogramContainer');
+  const rowHeightPx = parseInt(document.getElementById('rowHeight').value) || 120;
+  const maxWidthPx  = parseInt(document.getElementById('maxWidth').value)  || 960;
+  const multiplier  = parseFloat(document.getElementById('multiplier').value) || 0.5;
+
+  errorEl.style.display = 'none';
+  container.innerHTML   = '';
+  statsEl.innerHTML     = '';
+  container.style.maxWidth = maxWidthPx + 'px';
+
+  let clusters;
+  try {
+    clusters = parseInput(document.getElementById('jsonInput').value.trim());
+  } catch(e) {
+    errorEl.textContent   = 'JSON 파싱 오류: ' + e.message;
+    errorEl.style.display = 'block'; return;
+  }
+  if (!clusters.length) {
+    errorEl.textContent   = 'cluster_bbox가 포함된 항목이 없습니다.';
+    errorEl.style.display = 'block'; return;
+  }
+
+  const globalX1 = Math.min(...clusters.map(c => c.cluster_bbox[0]));
+  const globalX2 = Math.max(...clusters.map(c => c.cluster_bbox[2]));
+  const rows     = groupIntoRows(clusters);
+  const rowData  = buildCells(rows, multiplier, globalX1, globalX2);
+
+  let totalProducts = 0, totalEmpty = 0, totalWithImg = 0;
+  rowData.forEach(({cells}) => cells.forEach(c => {
+    if (c.type === 'product') {
+      totalProducts++;
+      const imgIdx = assignments[c.id];
+      if (imgIdx !== null && imgIdx !== undefined && images[imgIdx]) totalWithImg++;
+    } else totalEmpty++;
+  }));
+
+  statsEl.innerHTML = `
+    <div class="stat-pill"><div class="stat-dot" style="background:#aaa"></div>Rows: ${rows.length}</div>
+    <div class="stat-pill"><div class="stat-dot" style="background:#b5d4f4"></div>Products: ${totalProducts}</div>
+    <div class="stat-pill"><div class="stat-dot" style="background:#c8c5bf;border:1.5px dashed #bbb"></div>Empty: ${totalEmpty}</div>
+    ${totalWithImg ? `<div class="stat-pill"><div class="stat-dot" style="background:#c0dd97"></div>이미지 매핑: ${totalWithImg}개</div>` : ''}
+    <div class="stat-pill"><div class="stat-dot" style="background:#fac775"></div>Auto threshold: 층별 평균 × ${multiplier.toFixed(2)}</div>
+  `;
+
+  rowData.forEach(({cells, thresholdPx, avgWidth}, ri) => {
+    const totalW  = cells.reduce((s,c) => s + c.width, 0);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'shelf-row-wrapper';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'row-label';
+    labelEl.innerHTML = `Row ${ri+1}<span class="row-threshold">avg ${avgWidth}px<br>thr ${thresholdPx}px</span>`;
+    wrapper.appendChild(labelEl);
+
+    const rowEl = document.createElement('div');
+    rowEl.className = 'shelf-row';
+    rowEl.style.height = (rowHeightPx + 8) + 'px';
+
+    cells.forEach(cell => {
+      const pct = (cell.width / totalW * 100).toFixed(2);
+
+      if (cell.type === 'product') {
+        const el = document.createElement('div');
+        el.className = 'r-cell';
+        el.style.flexBasis = pct + '%';
+        el.style.height    = rowHeightPx + 'px';
+
+        const imgIdx = assignments[cell.id];
+        const imgObj = (imgIdx !== null && imgIdx !== undefined) ? images[imgIdx] : null;
+
+        if (imgObj) {
+          el.classList.add('has-img');
+          el.innerHTML = `
+            <img src="${imgObj.url}" alt="">
+            <span class="cell-id-overlay">P${cell.id}</span>
+            <span class="cell-wpx">${cell.width}px</span>
+          `;
+        } else {
+          el.style.background = PALETTE[(cell.id - 1) % PALETTE.length];
+          const fs = Math.min(18, Math.max(9, Math.round(cell.width / 14)));
+          el.innerHTML = `
+            <div class="cell-id" style="font-size:${fs}px">P${cell.id}</div>
+            <span class="cell-wpx">${cell.width}px</span>
+          `;
+        }
+        rowEl.appendChild(el);
+
+      } else {
+        const el = document.createElement('div');
+        el.className = 'r-cell-empty';
+        el.style.flexBasis = pct + '%';
+        el.style.height    = rowHeightPx + 'px';
+        el.innerHTML = `
+          <div class="empty-icon"></div>
+          <div class="empty-label">Empty</div>
+          <span class="empty-wpx">${cell.width}px</span>
+        `;
+        rowEl.appendChild(el);
+      }
+    });
+
+    wrapper.appendChild(rowEl);
+    container.appendChild(wrapper);
+  });
+}
+
+/* Auto-render on load */
+window.addEventListener('load', () => { refreshAssignmentUI(); render(); });
+</script>
+</body>
+</html>
